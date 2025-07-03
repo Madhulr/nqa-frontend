@@ -9,7 +9,7 @@ import DemoList from './pages/DemoList';
 import LoginPage from './components/LoginPage';
 import DemoList1 from './pages/DemoList1';
 import ClassList from './pages/ClassList';
-import ClassListPage from './pages/Class_List'; // <-- Renamed import
+import ClassListPage from './pages/Class_List';
 import PlacementList from './pages/PlacementList';
 import './App.css';
 

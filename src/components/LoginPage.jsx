@@ -1,10 +1,15 @@
-import React, { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import anime from 'animejs';
 import './LoginPage.css';
 
 const Login = () => {
   const canvasRef = useRef(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const c = canvasRef.current;
@@ -163,6 +168,39 @@ const Login = () => {
     };
   }, []);
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const response = await axios.post('http://localhost:8000/api/login/', {
+        email,
+        password,
+      });
+      // Save token and role
+      localStorage.setItem('access', response.data.access);
+      localStorage.setItem('role', response.data.role);
+      // Redirect based on role
+      switch (response.data.role) {
+        case 'counsellor':
+          navigate('/enquiry-form');
+          break;
+        case 'accounts':
+          navigate('/demo-list');
+          break;
+        case 'hr':
+          navigate('/class-list');
+          break;
+        case 'admin':
+          navigate('/dashboard'); // Change to your admin landing page
+          break;
+        default:
+          navigate('/');
+      }
+    } catch (error) {
+      setError('Invalid credentials or server error');
+    }
+  };
+
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative', fontFamily: 'Afacad, sans-serif' }}>
       <canvas
@@ -192,17 +230,33 @@ const Login = () => {
       }}>
         <img src="nammaqa.jpg" alt="Logo" style={{ height: 50, width: 320,marginLeft: '-10px' }} />
         <h2 style={{ marginBottom: '30px' }}>Log-In</h2>
-        <form>
+        <form onSubmit={handleLogin}>
           <div style={fieldWrapperStyle}>
             <div style={floatingInputWrapperStyle}>
               <label style={floatingLabelStyle}>Email-ID</label>
-              <input type="email" placeholder="Enter Email-ID" className="custom-placeholder" style={floatingInputStyle} />
+              <input
+                type="email"
+                placeholder="Enter Email-ID"
+                className="custom-placeholder"
+                style={floatingInputStyle}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
             </div>
           </div>
           <div style={fieldWrapperStyle}>
             <div style={floatingInputWrapperStyle}>
               <label style={floatingLabelStyle}>Password</label>
-              <input type="password" placeholder="Enter Password" className="custom-placeholder" style={floatingInputStyle} />
+              <input
+                type="password"
+                placeholder="Enter Password"
+                className="custom-placeholder"
+                style={floatingInputStyle}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
             </div>
           </div>
           <div style={{ textAlign: 'right', fontSize: '12px', marginTop:'-18px' ,marginBottom: '20px' }}>
@@ -210,6 +264,7 @@ const Login = () => {
               Forgot Password?
             </Link>
           </div>
+          {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
           <button type="submit" style={buttonStyle}>Login</button>
         </form>
       </div>
