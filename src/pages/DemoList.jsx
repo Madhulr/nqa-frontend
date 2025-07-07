@@ -9,31 +9,35 @@ const DemoList = ({ isSidebarOpen }) => {
 
 
   useEffect(() => {
-    const fetchDemoList = async () => {
-      const token = localStorage.getItem('access');
-      try {
-        const response = await axios.get('http://localhost:8000/api/enquiries/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        // Map Enquiry fields to DemoList table columns
-        setDemoData(
-          response.data.map((item) => ({
-            id: item.id,
-            name: item.name,
-            phone: item.phone,
-            email: item.email,
-            code: item.batch_code || '',
-            package: item.module || '',
-            status: item.demo_class_status || '',
-          }))
-        );
-      } catch (error) {
-        setDemoData([]);
-        // Optionally show error toast
-      }
-    };
     fetchDemoList();
   }, []);
+  const fetchDemoList = async () => {
+    const token = localStorage.getItem('access');
+    try {
+      const response = await axios.get('http://localhost:8000/api/enquiries/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Map Enquiry fields to DemoList table columns
+      // setDemoData(
+      //   response.data
+      //     .filter(item => item.move_to_demo) // Only show demo students
+      //     .map((item) => ({
+      //       id: item.id,
+      //       name: item.name,
+      //       phone: item.phone,
+      //       email: item.email,
+      //       code: item.batch_code || '',
+      //       package: item.module || '',
+      //       status: item.demo_class_status || '',
+      //     }))
+      // );
+      setDemoData(response.data)
+      // console.log('DemoList data:', response.data);
+    } catch (error) {
+      setDemoData([]);
+      // Optionally show error toast
+    }
+  };
 
 
   // Move: delete from EnquiryList (if you want to remove from demo view)
@@ -54,6 +58,7 @@ const DemoList = ({ isSidebarOpen }) => {
 
   // Update status in EnquiryList
   const handleStatusChange = async (id, newStatus) => {
+    console.log('Changing status for', id, 'to', newStatus);
     const token = localStorage.getItem('access');
     const user = demoData.find((u) => u.id === id);
     if (!user) return;
@@ -83,6 +88,9 @@ const DemoList = ({ isSidebarOpen }) => {
     (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  console.log('Filtered data:', filteredData);
+  console.log('demo data:', demoData);
 
   return (
     <div className={`demo-list-container ${!isSidebarOpen ? 'sidebar-closed' : ''}`}>
@@ -117,9 +125,13 @@ const DemoList = ({ isSidebarOpen }) => {
           </tr>
         </thead>
         <tbody>
-          {filteredData.map((user, index) => (
-            <tr key={index}>
-              <td>{user.name}</td>
+          {/* {filteredData.length === 0 ? ( */}
+
+
+          {demoData.length > 0 && demoData.map((user, index) => {
+            console.log('User:', user);
+            return <tr key={index}>
+              <td>{user.fullName}</td>
               <td>{user.phone}</td>
               <td>{user.email}</td>
               <td>{user.code}</td>
@@ -139,9 +151,9 @@ const DemoList = ({ isSidebarOpen }) => {
                     fontSize: '14px'
                   }}
                 >
+                  <option value="Not yet started">Not yet started</option>
+                  <option value="In progress">In progress</option>
                   <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Not Interested">Not Interested</option>
                 </select>
               </td>
               <td>
@@ -154,7 +166,9 @@ const DemoList = ({ isSidebarOpen }) => {
                 </button>
               </td>
             </tr>
-          ))}
+          })
+          }
+
         </tbody>
       </table>
     </div>
