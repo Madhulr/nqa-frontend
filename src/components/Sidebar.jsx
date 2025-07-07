@@ -25,6 +25,22 @@ const Sidebar = () => {
     { path: "/interview-list", name: "Interview List", icon: <BiSolidSpreadsheet />, section: "separate" },
   ];
 
+  const role = localStorage.getItem('role');
+
+  // Define allowed paths for each role
+  const roleAccess = {
+    counsellor: ['/enquiry-form', '/enquiry-list', '/demo-list'],
+    accounts: ['/demo-list-1', '/class-list'],
+    hr: ['/class_list', '/placement-list', '/interview-list'],
+    admin: 'all',
+  };
+
+  // Filter menu items based on role
+  const filteredMenuItems =
+    role === 'admin'
+      ? menuItems
+      : menuItems.filter(item => (roleAccess[role] || []).includes(item.path));
+
   const handleLogout = () => {
     navigate("/login");
   };
@@ -46,7 +62,7 @@ const Sidebar = () => {
             </button>
 
             <ul className="sidebar-menu">
-              {menuItems.map((item, index) => (
+              {filteredMenuItems.map((item, index) => (
                 <li
                   key={index}
                   className={location.pathname === item.path ? "active" : ""}

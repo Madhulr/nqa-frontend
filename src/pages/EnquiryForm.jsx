@@ -59,7 +59,7 @@ const StudentEnquiryForm = ({ isSidebarOpen }) => {
     name: '',
     phone: '',
     email: '',
-    location: '',
+    current_location: '',
     module: '',
     timing: '',
     trainingTime: '',
@@ -84,7 +84,7 @@ const StudentEnquiryForm = ({ isSidebarOpen }) => {
   const validateForm = () => {
     let valid = true;
     const newErrors = {};
-    ['name', 'phone', 'email', 'location', 'module', 'timing', 'trainingTime', 'startTime', 'profession', 'qualification', 'experience', 'referral'].forEach(field => {
+    ['name', 'phone', 'email', 'current_location', 'module', 'timing', 'trainingTime', 'startTime', 'profession', 'qualification', 'experience', 'referral'].forEach(field => {
       if (!formData[field]) {
         newErrors[field] = `${field} is required`;
         valid = false;
@@ -158,6 +158,7 @@ const StudentEnquiryForm = ({ isSidebarOpen }) => {
         setFormData({ ...initialFormData });
         setOtherValues({ module: '', profession: '', qualification: '', referral: '' });
         setLastClicked({});
+        window.dispatchEvent(new Event('enquiryAdded'));
       } else {
         toast.error('Failed to submit enquiry');
       }
@@ -203,7 +204,7 @@ const StudentEnquiryForm = ({ isSidebarOpen }) => {
         <FloatingLabelInput label="Student's Full Name *" value={formData.name} onChange={val => handleInputChange('name', val)} error={errors.name} />
         <FloatingLabelInput label="Student's Phone Number *" value={formData.phone} onChange={val => handleInputChange('phone', val)} error={errors.phone} type="tel" />
         <FloatingLabelInput label="Student's Email Address *" value={formData.email} onChange={val => handleInputChange('email', val)} error={errors.email} type="email" />
-        <FloatingLabelInput label="Student's Current Location *" value={formData.location} onChange={val => handleInputChange('location', val)} error={errors.location} />
+        <FloatingLabelInput label="Student's Current Location *" value={formData.current_location} onChange={val => handleInputChange('current_location', val)} error={errors.current_location} />
 
         <div style={{ marginTop: '2rem' }}>
           <label style={{ fontWeight: 600, color: '#003366', marginBottom: '0.5rem', display: 'block' }}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './DemoList.css';
 import { IoSearch } from "react-icons/io5";
 
@@ -6,30 +7,81 @@ const DemoList = ({ isSidebarOpen }) => {
   const [demoData, setDemoData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
+
   useEffect(() => {
-    setDemoData([
-      { id: 1, name: 'John Doe', phone: '123-456-7890', email: 'john@example.com', code: 'MATH101', package: 'Basic', status: 'Completed' },
-      { id: 2, name: 'Jane Smith', phone: '987-654-3210', email: 'jane@example.com', code: 'SCI202', package: 'Advanced', status: 'Pending' },
-    ]);
+    const fetchDemoList = async () => {
+      const token = localStorage.getItem('access');
+      try {
+        const response = await axios.get('http://localhost:8000/api/enquiries/', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Map Enquiry fields to DemoList table columns
+        setDemoData(
+          response.data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            phone: item.phone,
+            email: item.email,
+            code: item.batch_code || '',
+            package: item.module || '',
+            status: item.demo_class_status || '',
+          }))
+        );
+      } catch (error) {
+        setDemoData([]);
+        // Optionally show error toast
+      }
+    };
+    fetchDemoList();
   }, []);
 
-  const handleMoveBackToEnquiryList = (id) => {
-    const user = demoData.find((u) => u.id === id);
-    setDemoData((prev) => prev.filter((u) => u.id !== id));
-    console.log('Moved back to Enquiry List:', user);
+
+  // Move: delete from EnquiryList (if you want to remove from demo view)
+  const handleMoveBackToEnquiryList = async (id) => {
+    const token = localStorage.getItem('access');
+    try {
+      await axios.delete(`http://localhost:8000/api/enquiries/${id}/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setDemoData((prev) => prev.filter((u) => u.id !== id));
+    } catch (error) {
+      // Optionally show toast.error('Failed to move')
+    }
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setDemoData((prev) =>
-      prev.map((user) =>
-        user.id === id ? { ...user, status: newStatus } : user
-      )
-    );
+
+  // Update status in EnquiryList
+  const handleStatusChange = async (id, newStatus) => {
+    const token = localStorage.getItem('access');
+    const user = demoData.find((u) => u.id === id);
+    if (!user) return;
+    try {
+      const payload = {
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        batch_code: user.code,
+        module: user.package,
+        demo_class_status: newStatus,
+      };
+      await axios.put(`http://localhost:8000/api/enquiries/${id}/`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDemoData((prev) =>
+        prev.map((u) =>
+          u.id === id ? { ...u, status: newStatus } : u
+        )
+      );
+    } catch (error) {
+      // Optionally show toast.error('Failed to update status')
+    }
   };
 
   const filteredData = demoData.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
