@@ -42,7 +42,7 @@ const EnquiryList = ({ isSidebarOpen }) => {
             calling3: item.calling3 || '',
             calling4: item.calling4 || '',
             calling5: item.calling5 || '',
-            previousInteraction: item.previousInteraction || item.previous_interaction || '',
+            previousInteraction: item.previousInteraction || item.previous_interaction || ''
           }));
           setEnquiries(mapped);
         })
@@ -146,7 +146,15 @@ const EnquiryList = ({ isSidebarOpen }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setEnquiries((prev) =>
-        prev.map((e) => (e.id === editRowId ? { ...e, ...response.data } : e))
+        prev.map((e) =>
+          e.id === editRowId
+            ? {
+                ...e,
+                ...response.data,
+                previousInteraction: response.data.previous_interaction ?? response.data.previousInteraction ?? '',
+              }
+            : e
+        )
       );
       setEditRowId(null);
       setEditData({});
@@ -288,7 +296,13 @@ const EnquiryList = ({ isSidebarOpen }) => {
       renderCell: (params) => (
         <div style={{ display: 'flex', gap: '5px' }}>
           {editRowId === params.row.id ? (
-            <button style={buttonStyle('primary')} onClick={handleSaveClick} disabled={isSaveDisabled()}>Save</button>
+            <>
+              <button style={buttonStyle('outline')} onClick={() => {
+                setEditRowId(null);
+                setEditData({});
+              }}>Cancel</button>
+              <button style={buttonStyle('primary')} onClick={handleSaveClick} disabled={isSaveDisabled()}>Save</button>
+            </>
           ) : (
             <>
               <button style={buttonStyle('outline')} onClick={() => handleEditClick(params.row.id)}>Edit</button>
