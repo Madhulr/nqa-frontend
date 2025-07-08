@@ -17,21 +17,18 @@ const DemoList = ({ isSidebarOpen }) => {
       const response = await axios.get('http://localhost:8000/api/enquiries/', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Map Enquiry fields to DemoList table columns
-      // setDemoData(
-      //   response.data
-      //     .filter(item => item.move_to_demo) // Only show demo students
-      //     .map((item) => ({
-      //       id: item.id,
-      //       name: item.name,
-      //       phone: item.phone,
-      //       email: item.email,
-      //       code: item.batch_code || '',
-      //       package: item.module || '',
-      //       status: item.demo_class_status || '',
-      //     }))
-      // );
-      setDemoData(response.data)
+      const mapped = response.data
+        .filter(item => !item.move_to_demo) // Only show students not moved to demo
+        .map((item) => ({
+          id: item.id,
+          fullName: item.fullName || item.full_name || item.name || '',
+          phone: item.phone || item.phone_number || '',
+          email: item.email || '',
+          code: item.batch_code || '',
+          package: item.module || item.package || '',
+          status: item.demo_class_status || '',
+        }));
+      setDemoData(mapped);
       // console.log('DemoList data:', response.data);
     } catch (error) {
       setDemoData([]);
