@@ -41,8 +41,10 @@ const DemoList1 = () => {
   useEffect(() => {
     const fetchBackendData = async () => {
       try {
-        const response = await axios.get('/api/demo-data');
-        setBackendData(response.data);
+        const response = await axios.get('http://localhost:8000/api/enquiries/');
+        const mapped = response.data
+          .filter(item => (item.move_to_demo === true || item.move_to_demo === 1) && item.move_to_acc !== true);
+        setBackendData(mapped);
       } catch (error) {
         console.error('Error fetching backend data:', error);
       }

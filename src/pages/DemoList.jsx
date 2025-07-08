@@ -19,7 +19,7 @@ const DemoList = ({ isSidebarOpen }) => {
       });
 
       const mapped = response.data
-        .filter(item => item.move_to_demo === true || item.move_to_demo === 1)
+        .filter(item => (item.move_to_demo === true || item.move_to_demo === 1) && item.move_to_acc !== true)
         .map((item) => ({
           id: item.id,
           fullName: item.fullName || item.full_name || item.name || '',
@@ -63,26 +63,13 @@ const DemoList = ({ isSidebarOpen }) => {
 
   const handleMoveToAccounts = async (id) => {
     const token = localStorage.getItem('access');
-    const user = demoData.find((u) => u.id === id);
-    if (!user) return;
-
-    const payload = {
-      name: user.fullName,
-      fullName: user.fullName,
-      phone: user.phone,
-      email: user.email,
-      batch_code: user.code,
-      module: user.package,
-      demo_class_status: user.status,
-      move_to_demo: true,
-      move_to_acc: true,
-    };
-
     try {
-      await axios.put(`http://localhost:8000/api/enquiries/${id}/`, payload, {
+      await axios.patch(`http://localhost:8000/api/enquiries/${id}/`, {
+        move_to_acc: true,
+        move_to_demo: true,
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setDemoData((prev) => prev.filter((u) => u.id !== id));
     } catch (error) {
       console.error('Failed to move to accounts:', error.response?.data || error.message);
@@ -91,23 +78,15 @@ const DemoList = ({ isSidebarOpen }) => {
 
   const handleMoveBackToEnquiryList = async (id) => {
     const token = localStorage.getItem('access');
-    const user = demoData.find((u) => u.id === id);
-    if (!user) return;
-
+    // Only update the necessary fields, leave others untouched
     const payload = {
-      name: user.fullName,
-      fullName: user.fullName,
-      phone: user.phone,
-      email: user.email,
-      batch_code: user.code,
-      module: user.package,
-      demo_class_status: user.status,
       move_to_demo: false,
       move_to_acc: false,
+      demo_class_status: 'Not Interested', // or keep as user.status if you want
     };
 
     try {
-      await axios.put(`http://localhost:8000/api/enquiries/${id}/`, payload, {
+      await axios.patch(`http://localhost:8000/api/enquiries/${id}/`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

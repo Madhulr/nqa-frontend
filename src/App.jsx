@@ -12,6 +12,7 @@ import ClassList from './pages/ClassList';
 import ClassListPage from './pages/Class_List';
 import PlacementList from './pages/PlacementList';
 import './App.css';
+import AccountsDemoList from './pages/AccountsDemoList';
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => {
                     <Route path="/class_list" element={<ClassListPage />} /> {/* Fixed PascalCase */}
                     <Route path="/placement-list" element={<PlacementList />} />
                     <Route path="/interview-list" element={<ClassList />} />
+                    <Route path="/accounts-demo-list" element={<AccountsDemoList />} />
                     
                     {/* Redirect unknown routes */}
                     <Route path="*" element={<Navigate to="enquiry-form" replace />} />

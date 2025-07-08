@@ -27,7 +27,7 @@ const EnquiryList = ({ isSidebarOpen }) => {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => {
-          
+          console.log('API response:', res.data);
   
           const filtered = res.data
             .filter(item => item.move_to_demo === false || item.move_to_demo === 0);  // Filter only non-demo
@@ -39,8 +39,8 @@ const EnquiryList = ({ isSidebarOpen }) => {
             email: item.email || '',
             current_location: item.location || '',
             module: item.module || '',
-            trainingMode: item.trainingMode || item.timing || '',
-            trainingTimings: item.trainingTimings || item.trainingTime || '',
+            trainingMode: item.timing || '',
+            trainingTimings: item.trainingTime || '',
             startTime: item.startTime || '',
             calling1: item.calling1 || '',
             calling2: item.calling2 || '',
@@ -203,46 +203,16 @@ const EnquiryList = ({ isSidebarOpen }) => {
     const token = localStorage.getItem('access');
     try {
       await Promise.all(selectedEnquiry.map(async (enq) => {
-        const { data } = await axios.get(`http://localhost:8000/api/enquiries/${enq.id}/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const allFields = {
-          id: data.id,
-          name: data.name || '',
-          email: data.email || '',
-          phone: data.phone || '',
-          current_location: data.location || '',
-          module: data.module || '',
-          timing: data.trainingMode || '',
-          trainingTime: data.trainingTimings || '',
-          startTime: data.startTime || '',
-          profession: data.profession || '',
-          qualification: data.qualification || '',
-          experience: data.experience || '',
-          referral: data.referral || '',
-          consent: data.consent || false,
-          calling1: data.calling1 || '',
-          calling2: data.calling2 || '',
-          calling3: data.calling3 || '',
-          calling4: data.calling4 || '',
-          calling5: data.calling5 || '',
-          previous_interaction: data.previousInteraction || '',
-          status: data.status || '',
+        // Only update the necessary fields, leave others untouched
+        const payload = {
           batch_code: batchCode,
           package_code: batchCode,
           batch_subject: batchSubject,
           module: batchSubject,
           package: batchSubject,
-          demo_class_status: data.demo_class_status || '',
-          payment_status: data.payment_status || false,
           move_to_demo: true,
-          admin_notes: data.admin_notes || '',
-          placement_status: data.placement_status || '',
-          placement_notes: data.placement_notes || '',
-          interview_status: data.interview_status || '',
-          interview_notes: data.interview_notes || '',
         };
-        await axios.put(`http://localhost:8000/api/enquiries/${enq.id}/`, allFields, {
+        await axios.patch(`http://localhost:8000/api/enquiries/${enq.id}/`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }));
