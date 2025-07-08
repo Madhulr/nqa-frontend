@@ -27,7 +27,12 @@ const EnquiryList = ({ isSidebarOpen }) => {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => {
-          const mapped = res.data.map((item) => ({
+          
+  
+          const filtered = res.data
+            .filter(item => item.move_to_demo === false || item.move_to_demo === 0);  // Filter only non-demo
+  
+          const mapped = filtered.map((item) => ({
             id: item.id,
             fullName: item.fullName || item.name || '',
             phone: item.phone || '',
@@ -42,20 +47,23 @@ const EnquiryList = ({ isSidebarOpen }) => {
             calling3: item.calling3 || '',
             calling4: item.calling4 || '',
             calling5: item.calling5 || '',
-            previousInteraction: item.previousInteraction || item.previous_interaction || ''
+            previousInteraction: item.previousInteraction || item.previous_interaction || '',
+            move_to_demo: item.move_to_demo || 0,
           }));
+  
           setEnquiries(mapped);
         })
         .catch(err => {
           console.error('Error fetching enquiries:', err);
         });
     };
-
+  
     fetchEnquiries();
     const handler = () => fetchEnquiries();
     window.addEventListener('enquiryAdded', handler);
     return () => window.removeEventListener('enquiryAdded', handler);
   }, []);
+  
 
   const buttonStyle = (variant) => {
     switch (variant) {
@@ -267,7 +275,6 @@ const EnquiryList = ({ isSidebarOpen }) => {
     { field: 'fullName', headerName: 'Full Name', width: 180 },
     { field: 'phone', headerName: 'Phone Number', width: 180 },
     { field: 'email', headerName: 'Email Address', width: 250 },
-    { field: 'current_location', headerName: 'Current Location', width: 180 },
     { field: 'module', headerName: 'Subject / Module', width: 180 },
     { field: 'trainingMode', headerName: 'Training Mode', width: 150 },
     { field: 'trainingTimings', headerName: 'Training Timings', width: 180 },
