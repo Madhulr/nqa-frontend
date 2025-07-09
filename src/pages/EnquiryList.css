@@ -8,13 +8,13 @@ body {
   padding: 20px;
   background: #ffffff;
   flex: 1;
-  margin-left: 100px;
+  margin-left: var(--sidebar-width-open);
   transition: margin-left 0.3s;
   margin-top: 20px;
 }
 
 .enquiry-list-page.sidebar-closed {
-  margin-left: 10px;
+  margin-left: var(--sidebar-width-closed);
 }
 
 .toolbar {

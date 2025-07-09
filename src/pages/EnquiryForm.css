@@ -1,7 +1,7 @@
 .enquiry-page {
   display: flex;
   flex-direction: column;
-  margin-left: var(--sidebar-open-width);
+  margin-left: var(--sidebar-width-open);
   flex: 1;
   transition: margin-left 0.3s ease;
   text-align: left; /* Align text to the left */

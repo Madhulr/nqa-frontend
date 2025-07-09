@@ -63,11 +63,13 @@ const DemoList = ({ isSidebarOpen }) => {
 
   const handleMoveToAccounts = async (id) => {
     const token = localStorage.getItem('access');
+    const payload = {
+      move_to_demo: true,
+      move_to_acc: true,
+      demo_class_status: 'Completed',
+    };
     try {
-      await axios.patch(`http://localhost:8000/api/enquiries/${id}/`, {
-        move_to_acc: true,
-        move_to_demo: true,
-      }, {
+      await axios.patch(`http://localhost:8000/api/enquiries/${id}/`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDemoData((prev) => prev.filter((u) => u.id !== id));

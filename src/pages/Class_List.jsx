@@ -37,17 +37,27 @@ const Class_List = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const fetchBackendData = async () => {
+    const fetchClassList = async () => {
+      const token = localStorage.getItem('access');
       try {
-        const response = await axios.get('/api/class-data');
-        setBackendData(response.data);
+        const response = await axios.get('http://localhost:8000/api/enquiries/', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
+        const filtered = response.data.filter(
+          item => item.move_to_hr === true
+        );
+  
+        setBackendData(filtered);
       } catch (error) {
-        console.error('Error fetching backend data:', error);
+        console.error('Error fetching class list:', error.response?.data || error.message);
       }
     };
-
-    fetchBackendData();
+  
+    fetchClassList();
   }, []);
+  
+  
 
   const combinedData = [...staticData, ...backendData];
 
