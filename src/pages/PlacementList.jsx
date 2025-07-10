@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './PlacementList.css';
 import { IoSearch } from "react-icons/io5";
 
@@ -7,23 +8,32 @@ const PlacementList = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const sampleData = [
-      {
-        fullName: "John Doe",
-        phone: "+91 98765 43210",
-        email: "john.doe@example.com",
-        startDate: "PKG001",
-        salary: "Full Stack Development",
-      },
-      {
-        fullName: "Jane Smith",
-        phone: "+91 87654 32109",
-        email: "jane.smith@example.com",
-        startDate: "PKG002",
-        salary: "Data Science",
+    const fetchPlacementList = async () => {
+      const token = localStorage.getItem('access');
+      try {
+        const response = await axios.get('http://localhost:8000/api/enquiries/', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const filtered = response.data
+          .filter(item => item.move_to_placements === true)
+          .map(item => ({
+            fullName: item.fullName || item.name || '',
+            phone: item.phone || '',
+            email: item.email || '',
+            packageCode: item.packageCode || item.batch_code || '',
+            package: item.package || item.packageName || item.batch_subject || '',
+          }));
+
+        setData(filtered);
+      } catch (error) {
+        console.error('Error fetching placement list:', error.response?.data || error.message);
       }
-    ];
-    setData(sampleData);
+    };
+
+    fetchPlacementList();
   }, []);
 
   const filteredData = data.filter(item =>
@@ -84,7 +94,7 @@ const PlacementList = () => {
     <div style={{
       width: '1140px',
       padding: '3rem',
-      paddingTop: '1.5rem', // Align with sidebar pt-6
+      paddingTop: '1.5rem',
       background: '#fff',
       flex: 1,
       fontFamily: "'Afacad', sans-serif"
@@ -128,13 +138,20 @@ const PlacementList = () => {
                   <td>{item.fullName}</td>
                   <td>{item.phone}</td>
                   <td>{item.email}</td>
-                  <td>{item.startDate}</td>
-                  <td className="text-right">{item.salary}</td>
+                  <td>{item.packageCode}</td>
+                  <td className="text-right">{item.package}</td>
                   <td>
                     <button style={buttonStyle('primary')}>View More</button>
                   </td>
                 </tr>
               ))}
+              {filteredData.length === 0 && (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '1rem' }}>
+                    No matching students found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

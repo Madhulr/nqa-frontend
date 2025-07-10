@@ -3,7 +3,7 @@ import { IoSearch } from "react-icons/io5";
 import './ClassList.css';
 import axios from 'axios';
 
-const ClassList = ({ isSidebarOpen }) => {
+const ClassList = ({ isSidebarOpen, role = 'accounts' }) => {
   const [data, setData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editIndex, setEditIndex] = useState(null);
@@ -17,22 +17,37 @@ const ClassList = ({ isSidebarOpen }) => {
         setData([]); // Clear state if unauthenticated
         return;
       }
-  
+
       try {
         const response = await axios.get('http://localhost:8000/api/enquiries/', {
           headers: { Authorization: `Bearer ${token}` },
         });
-  
+
         const mapped = response.data
-          .filter(item => item.move_to_class === true || item.move_to_class === 1)
-          .map(item => ({
-            ...item,
-            paymentCalling1: item.pay_calling1 || '',
-            paymentCalling2: item.pay_calling2 || '',
-            paymentCalling3: item.pay_calling3 || '',
-            paymentCalling4: item.pay_calling4 || '',
-            paymentCalling5: item.pay_calling5 || '',
-          }));
+          .filter(item => {
+            const movedToClass = Boolean(item.move_to_class);
+            const paymentStatus = Boolean(item.payment_status); // true = paid
+
+            return movedToClass && !paymentStatus; // only show unpaid & moved-to-class students
+          })
+          .map(item => {
+            const packageCost = parseFloat(item.packageCost) || 0;
+            const amountPaid = parseFloat(item.amountPaid) || 0;
+            const discount = parseFloat(item.discount) || 0;
+            const balanceAmount = packageCost - amountPaid - discount;
+
+            return {
+              ...item,
+              paymentCalling1: item.pay_calling1 || '',
+              paymentCalling2: item.pay_calling2 || '',
+              paymentCalling3: item.pay_calling3 || '',
+              paymentCalling4: item.pay_calling4 || '',
+              paymentCalling5: item.pay_calling5 || '',
+              paymentStatus: item.payment_status ? 'Complete' : 'Pending',
+              balanceAmount,
+            };
+          });
+
   
         setData(mapped);
       } catch (error) {
@@ -42,7 +57,8 @@ const ClassList = ({ isSidebarOpen }) => {
     };
   
     fetchClassList();
-  }, []);
+  }, [role]); // Add role here
+  
     
 
   const handleSearchChange = (event) => {
@@ -55,11 +71,43 @@ const ClassList = ({ isSidebarOpen }) => {
   };
 
   const handleInputChange = (field, value) => {
-    setEditData((prev) => ({ ...prev, [field]: value }));
+    const updated = { ...editData, [field]: value };
+  
+    const cost = parseFloat(updated.packageCost) || 0;
+    const paid = parseFloat(updated.amountPaid) || 0;
+    const disc = parseFloat(updated.discount) || 0;
+  
+    updated.balanceAmount = cost - paid - disc;
+  
+    setEditData(updated);
   };
+  
 
   const handleSaveClick = async () => {
     const token = localStorage.getItem('access');
+  
+    const cost = parseFloat(editData.packageCost) || 0;
+    const paid = parseFloat(editData.amountPaid) || 0;
+    const disc = parseFloat(editData.discount) || 0;
+  
+    const balance = cost - paid - disc;
+  
+    if (cost < 0 || paid < 0 || disc < 0) {
+      alert("All values must be non-negative.");
+      return;
+    }
+  
+    if (paid + disc > cost) {
+      alert("Amount Paid + Discount cannot exceed Package Cost.");
+      return;
+    }
+  
+    // ✅ Prevent marking as complete when balance > 0
+    if (editData.paymentStatus === 'Complete' && balance > 0) {
+      alert("Cannot mark payment as Complete while balance is not 0.");
+      return;
+    }
+  
     try {
       await axios.patch(`http://localhost:8000/api/enquiries/${editData.id}/`, {
         pay_calling1: editData.paymentCalling1,
@@ -67,19 +115,34 @@ const ClassList = ({ isSidebarOpen }) => {
         pay_calling3: editData.paymentCalling3,
         pay_calling4: editData.paymentCalling4,
         pay_calling5: editData.paymentCalling5,
-        payment_status: editData.paymentStatus === 'Complete',
+        packageCost: cost,
+        amountPaid: paid,
+        discount: disc,
+        balanceAmount: balance,
+        payment_status: editData.paymentStatus === 'Complete' && balance === 0,  // ✅ Only update when balance is 0
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       const updatedData = [...data];
-      updatedData[editIndex] = editData;
+      updatedData[editIndex] = {
+        ...editData,
+        packageCost: cost,
+        amountPaid: paid,
+        discount: disc,
+        balanceAmount: balance,
+        paymentStatus: (editData.paymentStatus === 'Complete' && balance === 0) ? 'Complete' : 'Pending',
+      };
+  
       setData(updatedData);
       setEditIndex(null);
     } catch (error) {
       console.error('Save failed:', error.response?.data || error.message);
+      alert("Failed to save. Try again.");
     }
   };
+  
+  
 
   const handleMoveToHR = async (id) => {
     const token = localStorage.getItem('access');
@@ -89,11 +152,15 @@ const ClassList = ({ isSidebarOpen }) => {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
+  
+      // Update UI (optional: remove student from view)
+      setData(prev => prev.filter(item => item.id !== id));
       alert("Moved to HR!");
     } catch (error) {
       console.error("Error moving to HR:", error.response?.data || error.message);
     }
   };
+  
   
 
 
@@ -185,33 +252,67 @@ const ClassList = ({ isSidebarOpen }) => {
                   <td>{item.packageName || item.batch_subject || 'N/A'}</td>
                   <td>{item.batchCode || item.batch_code || 'N/A'}</td>
                   <td className="text-right">
-                    {parseFloat(item.packageCost || 0).toLocaleString('en-IN', {
-                      style: 'currency',
-                      currency: 'INR',
-                      maximumFractionDigits: 0
-                    })}
+                    {editIndex === idx ? (
+                      <input
+                        type="number"
+                        value={editData.packageCost || ''}
+                        onChange={(e) => handleInputChange('packageCost', e.target.value)}
+                      />
+                    ) : (
+                      parseFloat(item.packageCost || 0).toLocaleString('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        maximumFractionDigits: 0
+                      })
+                    )}
                   </td>
                   <td className="text-right">
-                    {parseFloat(item.amountPaid || 0).toLocaleString('en-IN', {
-                      style: 'currency',
-                      currency: 'INR',
-                      maximumFractionDigits: 0
-                    })}
+                    {editIndex === idx ? (
+                      <input
+                        type="number"
+                        value={editData.amountPaid || ''}
+                        onChange={(e) => handleInputChange('amountPaid', e.target.value)}
+                      />
+                    ) : (
+                      parseFloat(item.amountPaid || 0).toLocaleString('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        maximumFractionDigits: 0
+                      })
+                    )}
                   </td>
                   <td className="text-right">
-                    {parseFloat(item.discount || 0).toLocaleString('en-IN', {
-                      style: 'currency',
-                      currency: 'INR',
-                      maximumFractionDigits: 0
-                    })}
+                    {editIndex === idx ? (
+                      <input
+                        type="number"
+                        value={editData.discount || ''}
+                        onChange={(e) => handleInputChange('discount', e.target.value)}
+                      />
+                    ) : (
+                      parseFloat(item.discount || 0).toLocaleString('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        maximumFractionDigits: 0
+                      })
+                    )}
                   </td>
-                  <td className="text-right">
-                    {parseFloat(item.balanceAmount || 0).toLocaleString('en-IN', {
-                      style: 'currency',
-                      currency: 'INR',
-                      maximumFractionDigits: 0
-                    })}
+                  <td className="text-right" style={{ color: item.balanceAmount > 0 ? 'red' : 'inherit' }}>
+                    {editIndex === idx ? (
+                      <input
+                        type="number"
+                        value={editData.balanceAmount || ''}
+                        onChange={(e) => handleInputChange('balanceAmount', e.target.value)}
+                      />
+                    ) : (
+                      parseFloat(item.balanceAmount || 0).toLocaleString('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        maximumFractionDigits: 0
+                      })
+                    )}
                   </td>
+
+
                   {[1,2,3,4,5].map(i => (
                     <td key={`calling${i}`}>
                       {editIndex === idx ? (
@@ -225,7 +326,7 @@ const ClassList = ({ isSidebarOpen }) => {
                       )}
                     </td>
                   ))}
-                  <td>
+                  <td style={{ color: item.paymentStatus === 'Pending' ? 'red' : 'inherit' }}>
                     {editIndex === idx ? (
                       <select
                         value={editData.paymentStatus || 'Pending'}
@@ -238,6 +339,7 @@ const ClassList = ({ isSidebarOpen }) => {
                       item.paymentStatus || 'Pending'
                     )}
                   </td>
+
                   <td>
                     {editIndex === idx ? (
                       <>

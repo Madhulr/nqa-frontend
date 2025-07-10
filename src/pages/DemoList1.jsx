@@ -144,10 +144,6 @@ const DemoList1 = () => {
     setEditData(newEditData);
   };
   
-  
-  
-  
-
   return (
     <div className="demo-list-container" style={{ width: '100%' }}>
       <div className="header">

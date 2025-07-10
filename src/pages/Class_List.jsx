@@ -8,28 +8,28 @@ import { faEdit, faSave } from '@fortawesome/free-solid-svg-icons';
 
 const Class_List = () => {
   const navigate = useNavigate();
-  const staticData = [
-    {
-      name: 'Rohan Iyer',
-      phone: '+91 56785 43210',
-      email: 'rohan.iyer@example.com',
-      packageCode: 'MRS005',
-      package: 'MERN Stack',
-      placement: 'Yes',
-      dataLink: 'https://example.com/data1',
-      dataUpdated: '2024-05-01',
-    },
-    {
-      name: 'Meera Nambiar',
-      phone: '+91 51234 56789',
-      email: 'meera.n@example.com',
-      packageCode: 'DA0005',
-      package: 'Data Analytics',
-      placement: 'No',
-      dataLink: 'https://example.com/data2',
-      dataUpdated: '2024-05-10',
-    },
-  ];
+  // const staticData = [
+  //   {
+  //     name: 'Rohan Iyer',
+  //     phone: '+91 56785 43210',
+  //     email: 'rohan.iyer@example.com',
+  //     packageCode: 'MRS005',
+  //     package: 'MERN Stack',
+  //     placement: 'Yes',
+  //     dataLink: 'https://example.com/data1',
+  //     dataUpdated: '2024-05-01',
+  //   },
+  //   {
+  //     name: 'Meera Nambiar',
+  //     phone: '+91 51234 56789',
+  //     email: 'meera.n@example.com',
+  //     packageCode: 'DA0005',
+  //     package: 'Data Analytics',
+  //     placement: 'No',
+  //     dataLink: 'https://example.com/data2',
+  //     dataUpdated: '2024-05-10',
+  //   },
+  // ];
 
   const [backendData, setBackendData] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
@@ -44,9 +44,21 @@ const Class_List = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
   
-        const filtered = response.data.filter(
-          item => item.move_to_hr === true
-        );
+        const filtered = response.data
+          .filter(item => item.move_to_hr === true &&
+            item.move_to_placements !== true )
+          .map(item => ({
+            id: item.id,
+            name: item.fullName || item.name || '',
+            phone: item.phone || '',
+            email: item.email || '',
+            packageCode: item.packageCode || item.batch_code || '',
+            package: item.package || item.packageName || item.batch_subject || '',
+            placement: item.placement || '',
+            dataLink: item.data_link || '',             //  Map to camelCase
+            dataUpdated: item.data_updated || '',       //  Map to camelCase
+            moveToPlacements: item.move_to_placements || false //  Optional
+          }));
   
         setBackendData(filtered);
       } catch (error) {
@@ -58,8 +70,9 @@ const Class_List = () => {
   }, []);
   
   
+  
 
-  const combinedData = [...staticData, ...backendData];
+  const combinedData = backendData;
 
   // FIX: Check for name/email existence before toLowerCase
   const filteredData = combinedData.filter(
@@ -68,21 +81,56 @@ const Class_List = () => {
       (item.email && item.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleMoveToPlacementList = (item) => {
-    navigate('/placement-list', { state: { user: item } });
+  const handleMoveToPlacementList = async (item) => {
+    const token = localStorage.getItem('access');
+    const payload = {
+      move_to_placements: true,
+    };
+  
+    try {
+      await axios.patch(`http://localhost:8000/api/enquiries/${item.id}/`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      // Navigate after successful update
+      navigate('/placement-list', { state: { user: item } });
+  
+    } catch (error) {
+      console.error('Failed to move to placement list:', error.response?.data || error.message);
+    }
   };
+  
 
   const handleEditClick = (index) => {
     setEditIndex(index);
     setEditData(combinedData[index]);
   };
 
-  const handleSaveClick = () => {
-    const updatedData = [...combinedData];
-    updatedData[editIndex] = editData;
-    setBackendData(updatedData.slice(staticData.length));
-    setEditIndex(null);
+  const handleSaveClick = async () => {
+    const token = localStorage.getItem('access');
+  
+    try {
+      await axios.patch(`http://localhost:8000/api/enquiries/${editData.id}/`, {
+        placement: editData.placement,
+        data_link: editData.dataLink,
+        data_updated: editData.dataUpdated
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
+      const updatedData = [...combinedData];
+      updatedData[editIndex] = editData;
+      setBackendData(updatedData);
+      setEditIndex(null);
+    } catch (error) {
+      console.error('Failed to update:', error.response?.data || error.message);
+      alert('Failed to save placement info.');
+    }
   };
+  
 
   const handleChange = (field, value) => {
     setEditData((prevData) => ({ ...prevData, [field]: value }));
@@ -129,28 +177,8 @@ const Class_List = () => {
                 <td>{item.name}</td>
                 <td>{item.phone}</td>
                 <td>{item.email}</td>
-                <td>
-                  {editIndex === index ? (
-                    <input
-                      type="text"
-                      value={editData.packageCode}
-                      onChange={(e) => handleChange('packageCode', e.target.value)}
-                    />
-                  ) : (
-                    item.packageCode
-                  )}
-                </td>
-                <td>
-                  {editIndex === index ? (
-                    <input
-                      type="text"
-                      value={editData.package}
-                      onChange={(e) => handleChange('package', e.target.value)}
-                    />
-                  ) : (
-                    item.package
-                  )}
-                </td>
+                <td>{item.packageCode || item.batch_code || 'N/A'}</td>
+                <td>{item.package || item.packageName || item.batch_subject || 'N/A'}</td>
                 <td>
                   {editIndex === index ? (
                     <input
@@ -166,27 +194,30 @@ const Class_List = () => {
                   {editIndex === index ? (
                     <input
                       type="text"
-                      value={editData.dataLink}
+                      value={editData.dataLink || ''}
                       onChange={(e) => handleChange('dataLink', e.target.value)}
                     />
                   ) : (
                     <a href={item.dataLink} target="_blank" rel="noopener noreferrer">
-                      {item.dataLink}
+                      {item.dataLink || 'N/A'}
                     </a>
                   )}
                 </td>
+                
                 <td>
-                  {editIndex === index ? (
-                    <input
-                      type="text"
-                      value={editData.dataUpdated}
-                      onChange={(e) => handleChange('dataUpdated', e.target.value)}
-                    />
-                  ) : (
-                    item.dataUpdated
-                  )}
+                    {editIndex === index ? (
+                      <input
+                        type="date"
+                        value={editData.dataUpdated || ''}
+                        onChange={(e) => handleChange('dataUpdated', e.target.value)}
+                        max={new Date().toISOString().split('T')[0]} // ✅ restrict future dates
+                      />
+                    ) : (
+                      item.dataUpdated || 'N/A'
+                    )}
                 </td>
-                <td>
+
+                  <td>
                   {editIndex === index ? (
                     <span className="icon-btn save-btn" onClick={handleSaveClick}>
                       <FontAwesomeIcon icon={faSave} />
