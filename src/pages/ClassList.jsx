@@ -102,7 +102,7 @@ const ClassList = ({ isSidebarOpen, role = 'accounts' }) => {
       return;
     }
   
-    // ✅ Prevent marking as complete when balance > 0
+    //  Prevent marking as complete when balance > 0
     if (editData.paymentStatus === 'Complete' && balance > 0) {
       alert("Cannot mark payment as Complete while balance is not 0.");
       return;
@@ -141,9 +141,8 @@ const ClassList = ({ isSidebarOpen, role = 'accounts' }) => {
       alert("Failed to save. Try again.");
     }
   };
-  
-  
 
+  
   const handleMoveToHR = async (id) => {
     const token = localStorage.getItem('access');
     try {
@@ -160,11 +159,6 @@ const ClassList = ({ isSidebarOpen, role = 'accounts' }) => {
       console.error("Error moving to HR:", error.response?.data || error.message);
     }
   };
-  
-  
-
-
-
   const handleMoveToAccounts = async (id) => {
     const token = localStorage.getItem('access');
     try {

@@ -141,3 +141,28 @@ body {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
+.icon-btn {
+  padding: 4px 8px;
+  margin-right: 6px;
+  font-size: 0.8rem;
+  border: 1px solid #888;
+  background: #f2f2f2;
+  border-radius: 4px;
+  cursor: pointer;
+}
+/* default icon-btn styling (already exists) */
+.icon-btn {
+  padding: 4px 8px;
+  border: 1px solid #888;
+  background: #f2f2f2;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/*  green after save */
+.icon-btn.details-saved {
+  background: #28a745;       /* Bootstrap-like green */
+  border-color: #28a745;
+  color: #fff;
+  font-weight: 600;
+}
